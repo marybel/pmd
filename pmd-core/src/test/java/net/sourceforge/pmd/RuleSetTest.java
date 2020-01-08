@@ -28,7 +28,10 @@ import net.sourceforge.pmd.Report.ProcessingError;
 import net.sourceforge.pmd.RuleSet.RuleSetBuilder;
 import net.sourceforge.pmd.lang.Dummy2LanguageModule;
 import net.sourceforge.pmd.lang.DummyLanguageModule;
+import net.sourceforge.pmd.lang.Language;
+import net.sourceforge.pmd.lang.LanguageAgnosticModule;
 import net.sourceforge.pmd.lang.LanguageRegistry;
+import net.sourceforge.pmd.lang.ast.AnyLangNode;
 import net.sourceforge.pmd.lang.ast.DummyNode;
 import net.sourceforge.pmd.lang.ast.Node;
 import net.sourceforge.pmd.lang.rule.MockRule;
@@ -458,6 +461,53 @@ public class RuleSetTest {
     }
 
     @Test
+    public void testRegexRuleIncludeExcludeMultipleRuleSetWithRuleChainApplies() throws PMDException {
+        File file = new File("C:\\myworkspace\\project\\some\\random\\package\\RandomClass.java");
+        Language language = LanguageRegistry.getLanguage(LanguageAgnosticModule.NAME);
+
+        Rule rule = new RegexRule(".*oo.*");
+        rule.setName("FooRule1");
+        rule.setLanguage(language);
+        rule.addRuleChainVisit(AnyLangNode.X_PATH_NAME);
+        assertTrue("RuleChain rule", rule.isRuleChain());
+        RuleSet ruleSet1 = createRuleSetBuilder("RuleSet1")
+                .addRule(rule)
+                .build();
+
+        RuleSet ruleSet2 = createRuleSetBuilder("RuleSet2")
+                .addRule(rule)
+                .build();
+
+        RuleSets ruleSets = new RuleSets();
+        ruleSets.addRuleSet(ruleSet1);
+        ruleSets.addRuleSet(ruleSet2);
+
+        // Two violations
+        RuleContext ctx = new RuleContext();
+        Report r = new Report();
+        ctx.setReport(r);
+        ctx.setSourceCodeFile(file);
+        ctx.setLanguageVersion(language.getDefaultVersion());
+        ruleSets.apply(makeRegexTestCompilationUnits(), ctx, language);
+        assertEquals("Violations", 4, r.size());
+
+        // One violation
+        ruleSet1 = createRuleSetBuilder("RuleSet1")
+                .withFileExclusions(Pattern.compile(".*/package/.*"))
+                .addRule(rule)
+                .build();
+
+        ruleSets = new RuleSets();
+        ruleSets.addRuleSet(ruleSet1);
+        ruleSets.addRuleSet(ruleSet2);
+
+        r = new Report();
+        ctx.setReport(r);
+        ruleSets.apply(makeRegexTestCompilationUnits(), ctx, language);
+        assertEquals("Violations", 2, r.size());
+    }
+
+    @Test
     public void copyConstructorDeepCopies() {
         Rule rule = new FooRule();
         rule.setName("FooRule1");
@@ -507,6 +557,24 @@ public class RuleSetTest {
         node.setImage("Foo");
         nodes.add(node);
         return nodes;
+    }
+
+    private List<Node> makeRegexTestCompilationUnits() {
+        List<Node> nodes = new ArrayList<>();
+        nodes.add(createAnyLangNode(1, "xyz"));
+        nodes.add(createAnyLangNode(2, "Pools"));
+        nodes.add(createAnyLangNode(3, "123"));
+        nodes.add(createAnyLangNode(4, "Fools"));
+
+        return nodes;
+    }
+
+    private AnyLangNode createAnyLangNode(int nodeId, String nodeImage) {
+        AnyLangNode node = new AnyLangNode(nodeId);
+        node.testingOnlySetBeginLine(1);
+        node.testingOnlySetBeginColumn(1);
+        node.setImage(nodeImage);
+        return node;
     }
 
     @Test

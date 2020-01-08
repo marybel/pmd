@@ -26,6 +26,7 @@ import org.junit.rules.ExpectedException;
 import net.sourceforge.pmd.junit.JavaUtilLoggingRule;
 import net.sourceforge.pmd.junit.LocaleRule;
 import net.sourceforge.pmd.lang.DummyLanguageModule;
+import net.sourceforge.pmd.lang.LanguageAgnosticModule;
 import net.sourceforge.pmd.lang.LanguageRegistry;
 import net.sourceforge.pmd.lang.rule.MockRule;
 import net.sourceforge.pmd.lang.rule.RuleReference;
@@ -603,6 +604,15 @@ public class RuleSetFactoryTest {
                 r.getMinimumLanguageVersion());
     }
 
+    @Test
+    public void testMinimumLanguageAgnosticVersion() throws RuleSetNotFoundException {
+        Rule r = loadFirstRule(MINIMUM_LANGUAGE_AGNOSTIC_VERSION);
+        // WARNING: Here it's where it becames obvious that PMD's paradigm doesn't fit language 'agnostic'
+        // concerns
+        assertEquals(LanguageRegistry.getLanguage(LanguageAgnosticModule.NAME).getVersion("1.4"),
+                r.getMinimumLanguageVersion());
+    }
+
     @Test(expected = IllegalArgumentException.class)
     public void testIncorrectMinimumLanugageVersion() throws RuleSetNotFoundException {
         loadFirstRule(INCORRECT_MINIMUM_LANGUAGE_VERSION);
@@ -936,7 +946,7 @@ public class RuleSetFactoryTest {
                                                            + "  <properties>" + PMD.EOL
                                                            + "   <property name=\"test4\" description=\"test4\" type=\"String\" value=\"new property\"/>" + PMD.EOL // inexistent property
                                                            + "  </properties>" + PMD.EOL + " </rule>" + PMD.EOL + "</ruleset>";
-    
+
     private static final String REF_INTERNAL_TO_INTERNAL = "<?xml version=\"1.0\"?>" + PMD.EOL
             + "<ruleset name=\"test\">" + PMD.EOL + " <description>testdesc</description>" + PMD.EOL + "<rule "
             + PMD.EOL + "name=\"MockRuleName\" " + PMD.EOL + "message=\"avoid the mock rule\" " + PMD.EOL
@@ -1024,6 +1034,11 @@ public class RuleSetFactoryTest {
             + "name=\"MockRuleName\" " + PMD.EOL + "message=\"avoid the mock rule\" " + PMD.EOL
             + "class=\"net.sourceforge.pmd.lang.rule.MockRule\"" + PMD.EOL + " language=\"dummy\"" + PMD.EOL
             + " minimumLanguageVersion=\"1.4\">" + PMD.EOL + "</rule></ruleset>";
+
+    private static final String MINIMUM_LANGUAGE_AGNOSTIC_VERSION = "<?xml version=\"1.0\"?>" + PMD.EOL
+            + "<ruleset name=\"test\">" + PMD.EOL + "<description>testdesc</description>" + PMD.EOL + "<rule " + PMD.EOL
+            + "name=\"MockRuleName\" " + PMD.EOL + "message=\"avoid the mock rule\" " + PMD.EOL
+            + "class=\"net.sourceforge.pmd.lang.rule.MockRule\"" + PMD.EOL + " language=\"dummy\">" + PMD.EOL + "</rule></ruleset>";
 
     private static final String INCORRECT_MINIMUM_LANGUAGE_VERSION = "<?xml version=\"1.0\"?>" + PMD.EOL
             + "<ruleset name=\"test\">" + PMD.EOL + "<description>testdesc</description>" + PMD.EOL + "<rule " + PMD.EOL
